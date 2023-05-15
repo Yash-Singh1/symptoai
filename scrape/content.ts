@@ -54,7 +54,7 @@ async function processArticles(index: number = 0) {
     content += "\n## Risk Factors\n\n";
     while (title!.nextSibling as HTMLElement | null) {
       if (
-        (title!.nextSibling.tagName &&
+        ('tagName' in title!.nextSibling! &&
           (title!.nextSibling as HTMLElement).tagName.startsWith("h")) ||
         title!.nextSibling instanceof dom.window.HTMLParagraphElement
       ) {
@@ -69,7 +69,7 @@ async function processArticles(index: number = 0) {
           content += `1. ${li.textContent}\n`;
         }
         content += "\n";
-      } else if (!title?.nextSibling?.tagName) {
+      } else if (!('tagName' in title!.nextSibling!)) {
         // continue;
       } else if ((title!.nextSibling as HTMLElement).tagName === "H2") break;
 
@@ -90,7 +90,7 @@ async function processArticles(index: number = 0) {
     articlesProcessed[articlesProcessed.length - 1].content
   );
   articlesProcessed = [];
-  return void processArticles(index + 1);
+  void processArticles(index + 1);
 }
 
 processArticles();
