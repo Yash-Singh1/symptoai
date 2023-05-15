@@ -6,20 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "articles": "pnpm esr scrape/articles.ts",
+    "content": "pnpm esr scrape/content.ts"
   },
   "dependencies": {
+    "@formkit/auto-animate": "1.0.0-beta.6",
+    "@tanstack/react-query": "^4.29.7",
     "@types/node": "20.1.4",
     "@types/react": "18.2.6",
     "@types/react-dom": "18.2.4",
     "autoprefixer": "10.4.14",
+    "esbuild": "^0.17.19",
+    "esbuild-runner": "^2.2.2",
     "eslint": "8.40.0",
     "eslint-config-next": "13.4.2",
+    "jsdom": "^22.0.0",
     "next": "13.4.2",
     "postcss": "8.4.23",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tailwindcss": "3.3.2",
+    "tw-elements": "1.0.0-beta2",
     "typescript": "5.0.4"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.1",
+    "@types/webspeechapi": "^0.0.29"
   }
 }

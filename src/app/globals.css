@@ -25,3 +25,23 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+.record-pulse {
+  animation: pulse-2 1s infinite ease-in-out;
+  border-radius: 50%;
+}
+
+@keyframes pulse-2 {
+  0% {
+    border: 1px solid rgba(256, 0, 0, 0.25);
+    right: 38px;
+  }
+  50% {
+    border: 5px solid rgba(256, 0, 0, 0.25);
+    right: 34px;
+  }
+  100% {
+    border: 1px solid rgba(256, 0, 0, 0.25);
+    right: 38px;
+  }
+}
