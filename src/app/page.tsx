@@ -44,34 +44,54 @@ function Home() {
   const [running, setRunning] = useState<false | string>(false);
   const [animationParent] = useAutoAnimate();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef2 = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef3 = useRef<HTMLTextAreaElement | null>(null);
+  const textareaRef4 = useRef<HTMLTextAreaElement | null>(null);
   const [value, setValue] = useState("");
+  const [value2, setValue2] = useState("");
+  const [value3, setValue3] = useState("");
+  const [value4, setValue4] = useState("");
+  const [sex, setSex] = useState<string | null>(null);
+  const [age, setAge] = useState<string | null>(null);
+  const [diseases, setDiseases] = useState<{
+    [key: string]: { probability: string; summary: string; treatment: string };
+  } | null>(null);
 
   const { data, refetch, isFetching } = useQuery({
-    queryKey: ["symptoms", value],
+    queryKey: [
+      "symptoms",
+      JSON.stringify({
+        sex,
+        age,
+        symptoms: value,
+        "recent injury/trauma to the area": value4,
+        "lifestyle/medications": value3,
+        "past medical issues": value2,
+      }),
+    ],
     queryFn: async ({ queryKey }) => {
       setListView(true);
       const json = await fetch(
         `https://symptoai.vercel.app/query?user_info=${queryKey[1]}`
       ).then((response) => response.json());
-      const diseaseOutput = [];
-      for (const disease in json["matches"]) {
-        diseaseOutput.push(
-          json["matches"][disease]["metadata"]["metadata_key"]
-        );
-      }
-      return diseaseOutput as string[];
+      console.log(json);
+      setDiseases(json);
+      return json;
     },
     enabled: false,
   });
 
   const send = async () => {
     setValue(textareaRef.current!.value);
+    setValue2(textareaRef2.current!.value);
+    setValue3(textareaRef3.current!.value);
+    setValue4(textareaRef4.current!.value);
   };
 
   useEffect(() => {
-    if (value) void refetch();
+    if (value && value2 && value3 && value4 && sex && age) void refetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value, value2, value3, value4]);
 
   useEffect(() => {
     let SpeechRecognition =
@@ -136,12 +156,11 @@ function Home() {
     );
   }
 
-  const [sex, setSex] = useState<string | null>(null);
-  const [age, setAge] = useState<string | null>(null);
-
   return (
     <main
-      className="flex flex-col items-center justify-between p-4 sm:p-8 md:p-16 lg:p-24 min-h-screen"
+      className={`flex flex-col items-center justify-between ${
+        listView ? "p-2 sm:p-4 md:p-12 lg:p-18" : "p-4 sm:p-8 md:p-16 lg:p-24"
+      } min-h-screen`}
       ref={animationParent}
     >
       {listView ? null : (
@@ -183,133 +202,160 @@ function Home() {
           className="w-full mb-4 flex justify-end items-center cursor-pointer absolute right-4 top-4"
           onClick={() => {
             setListView(false);
-            textareaRef.current!.value = "";
+            setSex(null);
+            setAge(null);
+            setDiseases(null);
           }}
           dangerouslySetInnerHTML={{
             __html: `<svg style="width: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white"><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>`,
           }}
         ></div>
       ) : null}
-      <div className="w-full relative">
+      {diseases || isFetching ? null : (
         <div className="w-full relative">
-          {listView ? (
-            <label htmlFor="SymptomsInput" className="text-sm">
-              Symptoms
-            </label>
-          ) : null}
-          <textarea
-            // onKeyDown={(e) => {
-            //   if (e.key === "Enter" && !e.shiftKey) {
-            //     e.preventDefault();
-            //     send();
-            //   }
-            // }}
-            onChange={() => {
-              setListView(true);
-            }}
-            id="SymptomsInput"
-            ref={textareaRef}
-            placeholder="Enter your symptoms..."
-            className={textareaClassName.replace(
-              listView ? "" : " mt-2 ",
-              "  "
-            )}
-          ></textarea>
-          <Microphone id="SymptomsInput" />
-        </div>
-        {listView && data ? (
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            {data.map((result) => {
-              return (
-                <div key={result} className="rounded-lg bg-slate-950 p-4">
-                  <h2 className="text-lg">{result}</h2>
-                </div>
-              );
-            })}
+          <div className="w-full relative">
+            {listView ? (
+              <label htmlFor="SymptomsInput" className="text-sm">
+                Symptoms
+              </label>
+            ) : null}
+            <textarea
+              onChange={() => {
+                setListView(true);
+              }}
+              id="SymptomsInput"
+              ref={textareaRef}
+              placeholder="Enter your symptoms..."
+              className={textareaClassName.replace(
+                listView ? "" : " mt-2 ",
+                "  "
+              )}
+            ></textarea>
+            <Microphone id="SymptomsInput" />
           </div>
-        ) : listView ? (
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5].map((index) => {
-              return (
-                <div key={index} className="rounded-lg bg-slate-950 p-4">
-                  <div className="rounded-lg bg-slate-400/40 w-1/2 h-4 animate-pulse"></div>
-                </div>
-              );
-            })}
-          </div>
-        ) : null}
 
-        {listView && (
-          <>
-            <div className="w-full relative mt-4">
-              <label htmlFor="MedicalHistoryInput" className="text-sm">
-                Medical History
-              </label>
-              <textarea
-                id="MedicalHistoryInput"
-                placeholder="Enter your past medical history..."
-                className={textareaClassName}
-              ></textarea>
-              <Microphone id="MedicalHistoryInput" />
-            </div>
-            <div className="w-full relative mt-4">
-              <label htmlFor="MedicationsInput" className="text-sm">
-                Medications/Lifestyle Factors
-              </label>
-              <textarea
-                id="MedicationsInput"
-                placeholder="Enter your medications and lifestyle factors..."
-                className={textareaClassName}
-              ></textarea>
-              <Microphone id="MedicationsInput" />
-            </div>
-            <div className="mt-4">
-              <label className="text-sm mb-2 block">Sex</label>
-              <Select onValueChange={(value) => setSex(value)}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Sex" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="intersex">Intersex</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                  <SelectItem value="private">Prefer not to say</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mt-4">
-              <label className="text-sm mb-2 block">Age</label>
-              <Select onValueChange={(value) => setAge(value)}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Age" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {[...Array(100 - 18 + 1).fill(0)]
-                      .map((_, index) => index + 18)
-                      .map((age) => {
-                        return (
-                          <SelectItem value={age.toString()} key={age}>
-                            {age}
-                          </SelectItem>
-                        );
-                      })}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mt-4">
-              <Button onClick={() => void send()} className="w-full sm:w-max">
-                {isFetching && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Calculate Possibilities
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
+          {listView && (
+            <>
+              <div className="w-full relative mt-4">
+                <label htmlFor="MedicalHistoryInput" className="text-sm">
+                  Medical History
+                </label>
+                <textarea
+                  id="MedicalHistoryInput"
+                  placeholder="Enter your past medical history..."
+                  ref={textareaRef2}
+                  className={textareaClassName}
+                ></textarea>
+                <Microphone id="MedicalHistoryInput" />
+              </div>
+              <div className="w-full relative mt-4">
+                <label htmlFor="InjuryTraumaInput" className="text-sm">
+                  Injury/Trauma to Area
+                </label>
+                <textarea
+                  id="InjuryTraumaInput"
+                  placeholder="Enter past or recent injury/trauma to the area..."
+                  ref={textareaRef4}
+                  className={textareaClassName}
+                ></textarea>
+                <Microphone id="InjuryTraumaInput" />
+              </div>
+              <div className="w-full relative mt-4">
+                <label htmlFor="MedicationsInput" className="text-sm">
+                  Medications/Lifestyle Factors
+                </label>
+                <textarea
+                  id="MedicationsInput"
+                  placeholder="Enter your medications and lifestyle factors..."
+                  className={textareaClassName}
+                  ref={textareaRef3}
+                ></textarea>
+                <Microphone id="MedicationsInput" />
+              </div>
+              <div className="mt-4">
+                <label className="text-sm mb-2 block">Sex</label>
+                <Select onValueChange={(value) => setSex(value)}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Sex" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="intersex">Intersex</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="private">Prefer not to say</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-4">
+                <label className="text-sm mb-2 block">Age</label>
+                <Select onValueChange={(value) => setAge(value)}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Age" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {[...Array(100 - 18 + 1).fill(0)]
+                        .map((_, index) => index + 18)
+                        .map((age) => {
+                          return (
+                            <SelectItem value={age.toString()} key={age}>
+                              {age}
+                            </SelectItem>
+                          );
+                        })}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="mt-4">
+                <Button onClick={() => void send()} className="w-full sm:w-max">
+                  {isFetching && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  Calculate Possibilities
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {listView && diseases ? (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {Object.entries(diseases).map((result) => {
+            return (
+              <div key={result[0]} className="rounded-lg bg-slate-950 p-4">
+                <h2 className="text-lg">{result[0]}</h2>
+                <p className="text-sm">{result[1].summary}</p>
+              </div>
+            );
+          })}
+        </div>
+      ) : listView && isFetching ? (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {[1, 2, 3, 4, 5].map((index) => {
+            return (
+              <div key={index} className="rounded-lg bg-slate-950 p-4">
+                <div className="rounded-lg bg-slate-400/40 w-24 h-4 animate-pulse"></div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {listView && (diseases || isFetching) ? (
+        <Button
+          onClick={() => {
+            setDiseases(null);
+            void refetch();
+          }}
+          className="w-full sm:w-max mt-4"
+        >
+          {!diseases && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Refetch
+        </Button>
+      ) : null}
     </main>
   );
 }
