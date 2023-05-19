@@ -72,7 +72,7 @@ function Home() {
     queryFn: async ({ queryKey }) => {
       setListView(true);
       const json = await fetch(
-        `https://symptoai.vercel.app/query?user_info=${queryKey[1]}`
+        `https://web-production-a42cd.up.railway.app/query?user_info=${queryKey[1]}`
       ).then((response) => response.json());
       console.log(json);
       setDiseases(json);
