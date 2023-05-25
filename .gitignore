@@ -40,3 +40,6 @@ content/
 content_mod/
 content.zip
 content_mod.zip
+
+# prisma
+dev.db

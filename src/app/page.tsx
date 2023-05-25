@@ -17,10 +17,16 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
+import { type User } from "@prisma/client";
 
 const queryClient = new QueryClient();
 
 export default function Provider() {
+  useEffect(() => {
+    void fetch("/api/user/create");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Home />
@@ -71,9 +77,9 @@ function Home() {
     ],
     queryFn: async ({ queryKey }) => {
       setListView(true);
-      const json = await fetch(
-        `https://web-production-a42cd.up.railway.app/query?user_info=${queryKey[1]}`
-      ).then((response) => response.json());
+      const json = await fetch(`/api/ai?json=${queryKey[1]}`).then((response) =>
+        response.json()
+      );
       console.log(json);
       setDiseases(json);
       return json;
@@ -155,6 +161,17 @@ function Home() {
       </div>
     );
   }
+  const { isSignedIn } = useUser();
+
+  const { data: userDB } = useQuery({
+    queryKey: ["user", diseases],
+    queryFn: async () => {
+      return (await fetch("/api/user/get").then((response) =>
+        response.json()
+      )) as User;
+    },
+    enabled: !!isSignedIn,
+  });
 
   return (
     <main
@@ -163,6 +180,41 @@ function Home() {
       } min-h-screen`}
       ref={animationParent}
     >
+      <div
+        className={`absolute top-4 ${
+          listView ? "left-4" : "right-4"
+        } flex flex-nowrap justify-center items-center gap-x-4`}
+      >
+        {isSignedIn ? (
+          <div className="flex flex-wrap justify-center items-center gap-x-2 bg-gray-400/20 p-1 pr-2 rounded-lg hover:bg-gray-200/20 hover:transition-colors">
+            <img className="h-[40px]" alt="Tokens" src="/coin.png" />
+            <p className="mr-1">
+              {userDB ? String(userDB.tokens + userDB.freeTokens) : "N/A"}
+            </p>
+            <div
+              className="h-full w-5 align-middle bg-yellow-200 p-1 rounded-sm hover:bg-yellow-100 hover:transition-colors cursor-pointer"
+              onClick={() => {
+                fetch("/api/stripe/create")
+                  .then((response) => response.json())
+                  .then((json) => {
+                    window.open(json.url as string, "_blank");
+                  });
+              }}
+              dangerouslySetInnerHTML={{
+                __html: `<svg xmlns="http://www.w3.org/2000/svg" fill="black" viewBox="0 0 448 512"><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg>`,
+              }}
+            />
+          </div>
+        ) : null}
+        {listView ? null : isSignedIn ? (
+          <UserButton />
+        ) : (
+          <div className="bg-gray-400/20 p-1 px-3 rounded-lg hover:bg-gray-200/20 hover:transition-colors cursor-pointer">
+            <SignInButton />
+          </div>
+        )}
+      </div>
+
       {listView ? null : (
         <div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-wide text-center mb-4">
@@ -198,21 +250,23 @@ function Home() {
         </div>
       )}
       {listView ? (
-        <div
-          className="w-full mb-4 flex justify-end items-center cursor-pointer absolute right-4 top-4"
-          onClick={() => {
-            setListView(false);
-            setSex(null);
-            setAge(null);
-            setDiseases(null);
-          }}
-          dangerouslySetInnerHTML={{
-            __html: `<svg style="width: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white"><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>`,
-          }}
-        ></div>
+        <div className="w-full mb-4 flex justify-end items-center cursor-pointer absolute right-4 top-4">
+          <div
+            onClick={() => {
+              setListView(false);
+              setSex(null);
+              setAge(null);
+              setDiseases(null);
+              if (textareaRef.current) textareaRef.current.value = "";
+            }}
+            dangerouslySetInnerHTML={{
+              __html: `<svg style="width: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" fill="white"><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M342.6 150.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L192 210.7 86.6 105.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3L146.7 256 41.4 361.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L192 301.3 297.4 406.6c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L237.3 256 342.6 150.6z"/></svg>`,
+            }}
+          ></div>
+        </div>
       ) : null}
       {diseases || isFetching ? null : (
-        <div className="w-full relative">
+        <div className="w-full relative mt-4">
           <div className="w-full relative">
             {listView ? (
               <label htmlFor="SymptomsInput" className="text-sm">

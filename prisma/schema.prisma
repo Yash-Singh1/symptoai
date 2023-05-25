@@ -1,0 +1,25 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["jsonProtocol"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id
+  lastFree   DateTime @default(now())
+  freeTokens Int      @default(10000)
+  tokens     Int      @default(0)
+}
+
+model PLink {
+  id      String @id @default(cuid())
+  batches Int
+  ownerId String
+}
