@@ -4,6 +4,18 @@ import { prisma } from "../prisma";
 
 export const runtime = "nodejs";
 
+export interface AIResponse {
+  [key: string]: {
+    probability: string;
+    summary: string;
+    treatment: string;
+    /**
+     * [localized, unlocalized]
+     */
+    metadata: [string, string];
+  };
+}
+
 export async function GET(request: NextRequest) {
   let input = await request.nextUrl.searchParams.get("json");
 

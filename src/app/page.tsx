@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { type User } from "@prisma/client";
+import type { AIResponse } from "./api/ai/route";
 
 const queryClient = new QueryClient();
 
@@ -59,9 +60,10 @@ function Home() {
   const [value4, setValue4] = useState("");
   const [sex, setSex] = useState<string | null>(null);
   const [age, setAge] = useState<string | null>(null);
-  const [diseases, setDiseases] = useState<{
-    [key: string]: { probability: string; summary: string; treatment: string };
-  } | null>(null);
+  const [diseases, setDiseases] = useState<AIResponse | null>(null);
+
+  // TODO: use `phoneNumbers` in UI
+  const [phoneNumbers, setPhoneNumbers] = useState<string[] | null>(null);
 
   const { data, refetch, isFetching } = useQuery({
     queryKey: [
@@ -79,9 +81,22 @@ function Home() {
       setListView(true);
       const json = await fetch(`/api/ai?json=${queryKey[1]}`).then((response) =>
         response.json()
-      );
+      ) as AIResponse;
       console.log(json);
       setDiseases(json);
+      void (async () => {
+        Promise.all(Object.keys(json).map((diseaseName) => {
+          return fetch(`https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`).then((response) => response.text()).then((text) => {
+            return text.match(/\/biz\/.*?(?=[">])/)![0]
+          }).then((href) => {
+            return fetch(`https://www.yelp.com${href}`).then(response => response.text()).then((text) => {
+              return text.match(/\(\d{3}\) \d{3}-\d{4}/)![0]
+            })
+          })
+        })).then((phoneNumbers) => {
+          setPhoneNumbers(phoneNumbers);
+        })
+      });
       return json;
     },
     enabled: false,
