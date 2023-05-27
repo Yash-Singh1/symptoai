@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs";
 import { prisma } from "../prisma";
+import { Redis } from "@upstash/redis";
+import { v4 as uuid } from "uuid";
 
-export const runtime = "edge";
+const redis = new Redis({
+  url: "https://usw1-superb-kite-34403.upstash.io",
+  token: process.env.REDIS_TOKEN!,
+});
+
+export const runtime = "nodejs";
 
 export interface AIResponse {
   [key: string]: {
@@ -50,14 +57,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not enough tokens" }, { status: 400 });
   }
 
-  const answer = await fetch(
-    "https://web-production-a42cd.up.railway.app/query?user_info=" + input,
-    {
-      headers: {
-        Authorization: process.env.API_KEY!,
-      },
-    }
-  ).then((res) => res.json());
+  const token = uuid();
+  await redis.set(token, input);
+
+  // const answer = await fetch(
+  //   "https://web-production-a42cd.up.railway.app/query?user_info=" + input,
+  //   {
+  //     headers: {
+  //       Authorization: process.env.API_KEY!,
+  //     },
+  //   }
+  // ).then((res) => res.json());
 
   await prisma.user.update({
     where: {
@@ -71,5 +81,5 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  return NextResponse.json(answer);
+  return NextResponse.json(token);
 }

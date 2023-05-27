@@ -82,23 +82,40 @@ function Home() {
     ],
     queryFn: async ({ queryKey }) => {
       setListView(true);
-      const json = (await fetch(`/api/ai?json=${queryKey[1]}`).then(
-        (response) => response.json()
-      )) as AIResponse;
+      const json = (await fetch(`/api/ai?json=${queryKey[1]}`)
+        .then((response) => response.json())
+        .then((token: string) => {
+          return fetch(
+            `https://web-production-a42cd.up.railway.app/query?user_info=${queryKey[1]}`,
+            {
+              headers: {
+                "X-SymptoAI-Auth": token,
+              },
+            }
+          ).then((response) => response.json());
+        })) as AIResponse;
       console.log(json);
       setDiseases(json);
       void (async () => {
         Promise.all(
           Object.keys(json).map((diseaseName) => {
             return fetch(
-              `https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`
+              `/api/yelp?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}&path=search`
             )
               .then((response) => response.text())
               .then((text) => {
                 return text.match(/\/biz\/.*?(?=[">])/)![0];
               })
               .then((href) => {
-                return fetch(`https://www.yelp.com${href}`)
+                const url = new URL(
+                  href,
+                  `https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`
+                );
+                return fetch(
+                  `/api/yelp${url.search}${
+                    url.search ? "&" : "?"
+                  }path=${url.pathname.slice(1)}`
+                )
                   .then((response) => response.text())
                   .then((text) => {
                     return text.match(/\(\d{3}\) \d{3}-\d{4}/)![0];
@@ -108,7 +125,7 @@ function Home() {
         ).then((phoneNumbers) => {
           setPhoneNumbers(phoneNumbers);
         });
-      });
+      })();
       return json;
     },
     enabled: false,
