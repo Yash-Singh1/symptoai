@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs";
 import { prisma } from "../prisma";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export interface AIResponse {
   [key: string]: {

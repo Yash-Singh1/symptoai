@@ -35,6 +35,9 @@ export default function Provider() {
   );
 }
 
+const minAge = 1;
+const maxAge = 120;
+
 declare global {
   interface Window {
     mozSpeechRecognition?: SpeechRecognitionStatic;
@@ -79,23 +82,32 @@ function Home() {
     ],
     queryFn: async ({ queryKey }) => {
       setListView(true);
-      const json = await fetch(`/api/ai?json=${queryKey[1]}`).then((response) =>
-        response.json()
-      ) as AIResponse;
+      const json = (await fetch(`/api/ai?json=${queryKey[1]}`).then(
+        (response) => response.json()
+      )) as AIResponse;
       console.log(json);
       setDiseases(json);
       void (async () => {
-        Promise.all(Object.keys(json).map((diseaseName) => {
-          return fetch(`https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`).then((response) => response.text()).then((text) => {
-            return text.match(/\/biz\/.*?(?=[">])/)![0]
-          }).then((href) => {
-            return fetch(`https://www.yelp.com${href}`).then(response => response.text()).then((text) => {
-              return text.match(/\(\d{3}\) \d{3}-\d{4}/)![0]
-            })
+        Promise.all(
+          Object.keys(json).map((diseaseName) => {
+            return fetch(
+              `https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`
+            )
+              .then((response) => response.text())
+              .then((text) => {
+                return text.match(/\/biz\/.*?(?=[">])/)![0];
+              })
+              .then((href) => {
+                return fetch(`https://www.yelp.com${href}`)
+                  .then((response) => response.text())
+                  .then((text) => {
+                    return text.match(/\(\d{3}\) \d{3}-\d{4}/)![0];
+                  });
+              });
           })
-        })).then((phoneNumbers) => {
+        ).then((phoneNumbers) => {
           setPhoneNumbers(phoneNumbers);
-        })
+        });
       });
       return json;
     },
@@ -364,8 +376,8 @@ function Home() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      {[...Array(100 - 18 + 1).fill(0)]
-                        .map((_, index) => index + 18)
+                      {[...Array(maxAge - minAge + 1).fill(0)]
+                        .map((_, index) => index + minAge)
                         .map((age) => {
                           return (
                             <SelectItem value={age.toString()} key={age}>
@@ -392,11 +404,25 @@ function Home() {
 
       {listView && diseases ? (
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {Object.entries(diseases).map((result) => {
+          {Object.entries(diseases).map((result, index) => {
             return (
-              <div key={result[0]} className="rounded-lg bg-slate-950 p-4">
+              <div
+                key={result[0]}
+                className="rounded-lg bg-slate-950 p-4 pb-16 relative"
+              >
                 <h2 className="text-lg">{result[0]}</h2>
                 <p className="text-sm">{result[1].summary}</p>
+                <a href={`tel:${phoneNumbers ? phoneNumbers[index] : ""}`}>
+                  <div className="text-sm mt-2 flex flex-row flex-nowrap gap-x-2 absolute bottom-4 bg-blue-500 rounded-lg p-1 px-2">
+                    <img
+                      width={14}
+                      height={14}
+                      src="/phone.svg"
+                      alt="Telephone"
+                    />
+                    Call a doctor
+                  </div>
+                </a>
               </div>
             );
           })}
