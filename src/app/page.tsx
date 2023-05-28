@@ -64,8 +64,6 @@ function Home() {
   const [sex, setSex] = useState<string | null>(null);
   const [age, setAge] = useState<string | null>(null);
   const [diseases, setDiseases] = useState<AIResponse | null>(null);
-
-  // TODO: use `phoneNumbers` in UI
   const [phoneNumbers, setPhoneNumbers] = useState<string[] | null>(null);
 
   const { data, refetch, isFetching } = useQuery({
@@ -94,7 +92,6 @@ function Home() {
             }
           ).then((response) => response.json());
         })) as AIResponse;
-      console.log(json);
       setDiseases(json);
       void (async () => {
         Promise.all(
@@ -107,10 +104,7 @@ function Home() {
                 return text.match(/\/biz\/.*?(?=[">])/)![0];
               })
               .then((href) => {
-                const url = new URL(
-                  href,
-                  `https://www.yelp.com/search?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}`
-                );
+                const url = new URL(href, "https://www.yelp.com/search");
                 return fetch(
                   `/api/yelp${url.search}${
                     url.search ? "&" : "?"
@@ -118,7 +112,7 @@ function Home() {
                 )
                   .then((response) => response.text())
                   .then((text) => {
-                    return text.match(/\(\d{3}\) \d{3}-\d{4}/)![0];
+                    return (text.match(/\(\d{3}\) \d{3}-\d{4}/) || [""])[0];
                   });
               });
           })
@@ -429,17 +423,19 @@ function Home() {
               >
                 <h2 className="text-lg">{result[0]}</h2>
                 <p className="text-sm">{result[1].summary}</p>
-                <a href={`tel:${phoneNumbers ? phoneNumbers[index] : ""}`}>
-                  <div className="text-sm mt-2 flex flex-row flex-nowrap gap-x-2 absolute bottom-4 bg-blue-500 rounded-lg p-1 px-2">
-                    <img
-                      width={14}
-                      height={14}
-                      src="/phone.svg"
-                      alt="Telephone"
-                    />
-                    Call a doctor
-                  </div>
-                </a>
+                {phoneNumbers && !phoneNumbers[index] ? null : (
+                  <a href={`tel:${phoneNumbers ? phoneNumbers[index] : ""}`}>
+                    <div className="text-sm mt-2 flex flex-row flex-nowrap gap-x-2 absolute bottom-4 bg-blue-500 rounded-lg p-1 px-2">
+                      <img
+                        width={14}
+                        height={14}
+                        src="/phone.svg"
+                        alt="Telephone"
+                      />
+                      Call a doctor
+                    </div>
+                  </a>
+                )}
               </div>
             );
           })}
