@@ -41,19 +41,26 @@ export default function Diseases({
   return (
     <div className="container grid grid-cols-2 gap-8 mt-8">
       <div className="text-center">
-        <h2 className="text-5xl font-bold break-words">{searchParams.title}</h2>
-        <img
-          className="mx-auto mt-20"
-          alt="Probability Graph"
-          src={getImageSrc(searchParams.probability)}
-        ></img>
+        <h1 className="text-5xl font-bold break-words">{searchParams.title}</h1>
+        <div className="w-max mx-auto">
+          <div className="mt-10 w-full grid-rows-3">
+            <h4 className="text-2xl text-left font-semibold mb-2">
+              Probability
+            </h4>
+            <img
+              alt="Probability Graph"
+              src={getImageSrc(searchParams.probability)}
+            ></img>
+            <p className="text-sm text-left ml-[50px]">{searchParams.probability}</p>
+          </div>
+        </div>
       </div>
 
       <div>
         {searchParams.doctorName && searchParams.doctorNumber ? (
           <div>
             <div className="font-bold text-2xl section-title mb-4">
-              Contacts:
+              Contacts
             </div>
             <div className="text-xl mt-2 flex flex-row flex-nowrap gap-x-2">
               <img width={20} height={20} src="/phone.svg" alt="Telephone" />
@@ -61,12 +68,10 @@ export default function Diseases({
                 {searchParams.doctorNumber ? searchParams.doctorNumber : "N/A"}
               </p>
             </div>
-            {/* <div className="text-xl mt-2 flex flex-row flex-nowrap gap-x-2">
+            <div className="text-xl mt-2 flex flex-row flex-nowrap gap-x-2">
               <img width={20} height={20} src="/user.svg" alt="User" />
-              <p className="text-slate-100">
-                {searchParams.doctorName ? searchParams.doctorName : "N/A"}
-              </p>
-            </div> */}
+              <p className="text-slate-100">Dr. Jane Doe, MD</p>
+            </div>
           </div>
         ) : null}
 
@@ -76,9 +81,13 @@ export default function Diseases({
         <div className="font-bold text-2xl section-title mt-4 mb-4">
           Treatment
         </div>
-        <ul>
+        <ul className="list-disc pl-4">
           {searchParams.treatment.split(",").map((treatment, index) => {
-            return <li key={index}>{treatment}</li>;
+            return (
+              <li key={index} className="p-1">
+                {treatment}
+              </li>
+            );
           })}
         </ul>
       </div>
