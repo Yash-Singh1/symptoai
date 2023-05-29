@@ -20,6 +20,7 @@ import { Loader2 } from "lucide-react";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { type User } from "@prisma/client";
 import type { AIResponse } from "./api/ai/route";
+import Link from "next/link";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +66,7 @@ function Home() {
   const [age, setAge] = useState<string | null>(null);
   const [diseases, setDiseases] = useState<AIResponse | null>(null);
   const [phoneNumbers, setPhoneNumbers] = useState<string[] | null>(null);
+  const [doctorNames, setDoctorNames] = useState<string[] | null>(null);
 
   const { data, refetch, isFetching } = useQuery({
     queryKey: [
@@ -101,7 +103,7 @@ function Home() {
             )
               .then((response) => response.text())
               .then((text) => {
-                return text.match(/\/biz\/.*?(?=[">])/)![0];
+                return text.match(/\/biz\/.*?(?=["'>])/)![0].trim();
               })
               .then((href) => {
                 const url = new URL(href, "https://www.yelp.com/search");
@@ -112,12 +114,21 @@ function Home() {
                 )
                   .then((response) => response.text())
                   .then((text) => {
-                    return (text.match(/\(\d{3}\) \d{3}-\d{4}/) || [""])[0];
+                    return [
+                      (text.match(/\(\d{3}\) \d{3}-\d{4}/) || [""])[0],
+                      text
+                        .match(
+                          /(<title(\s*[^=\s]*?=["']?.*?['"]?\s*)*?>)(.*?)- Yelp<\/title>/
+                        )![0]
+                        .split("-")[0]!
+                        .trim()[0],
+                    ] as const;
                   });
               });
           })
-        ).then((phoneNumbers) => {
-          setPhoneNumbers(phoneNumbers);
+        ).then((articleInfo) => {
+          setPhoneNumbers(articleInfo.map((article) => article[0]));
+          setDoctorNames(articleInfo.map((article) => article[1]));
         });
       })();
       return json;
@@ -421,7 +432,18 @@ function Home() {
                 key={result[0]}
                 className="rounded-lg bg-slate-950 p-4 pb-16 relative"
               >
-                <h2 className="text-lg">{result[0]}</h2>
+                <Link
+                  href={`/diseases?title=${result[0]}&summary=${
+                    result[1].summary
+                  }&probability=${result[1].probability}&treatment=${
+                    result[1].treatment
+                  }&doctorName=${
+                    doctorNames ? doctorNames[index] : ""
+                  }&doctorNumber=${phoneNumbers ? phoneNumbers[index] : ""}`}
+                >
+                  <h2 className="text-lg">{result[0]}</h2>
+                </Link>
+
                 <p className="text-sm">{result[1].summary}</p>
                 {phoneNumbers && !phoneNumbers[index] ? null : (
                   <a href={`tel:${phoneNumbers ? phoneNumbers[index] : ""}`}>
