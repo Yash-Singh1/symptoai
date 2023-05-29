@@ -21,17 +21,24 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { type User } from "@prisma/client";
 import type { AIResponse } from "./api/ai/route";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 const queryClient = new QueryClient();
 
-export default function Provider() {
+type SearchParams = { [key: string]: string | string[] | undefined };
+
+export default function Provider({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
   useEffect(() => {
     void fetch("/api/user/create");
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Home />
+      <Home searchParams={searchParams} />
     </QueryClientProvider>
   );
 }
@@ -50,7 +57,15 @@ let recognition: SpeechRecognition | undefined;
 const textareaClassName =
   "flex h-20 w-full rounded-md mt-2 border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
-function Home() {
+const sexLocalized: Record<string, string> = {
+  male: "Male",
+  female: "Female",
+  intersex: "Intersex",
+  other: "Other",
+  private: "Prefer not to say",
+};
+
+function Home({ searchParams }: { searchParams: SearchParams }) {
   const [listView, setListView] = useState(false);
   const [running, setRunning] = useState<false | string>(false);
   const [animationParent] = useAutoAnimate();
@@ -67,6 +82,32 @@ function Home() {
   const [diseases, setDiseases] = useState<AIResponse | null>(null);
   const [phoneNumbers, setPhoneNumbers] = useState<string[] | null>(null);
   const [doctorNames, setDoctorNames] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (searchParams.back) {
+      setListView(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [backer, setBacker] = useState(true);
+
+  useEffect(() => {
+    if (searchParams.back && listView && backer) {
+      if (textareaRef.current)
+        textareaRef.current.value = localStorage.getItem("value") || "";
+      if (textareaRef2.current)
+        textareaRef2.current.value = localStorage.getItem("value2") || "";
+      if (textareaRef3.current)
+        textareaRef3.current.value = localStorage.getItem("value3") || "";
+      if (textareaRef4.current)
+        textareaRef4.current.value = localStorage.getItem("value4") || "";
+      setSex(localStorage.getItem("sex"));
+      setAge(localStorage.getItem("age"));
+      setBacker(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listView]);
 
   const { data, refetch, isFetching } = useQuery({
     queryKey: [
@@ -144,7 +185,15 @@ function Home() {
   };
 
   useEffect(() => {
-    if (value && value2 && value3 && value4 && sex && age) void refetch();
+    if (value && value2 && value3 && value4 && sex && age) {
+      localStorage.setItem("value", value);
+      localStorage.setItem("value2", value2);
+      localStorage.setItem("value3", value3);
+      localStorage.setItem("value4", value4);
+      localStorage.setItem("sex", sex);
+      localStorage.setItem("age", age);
+      void refetch();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, value2, value3, value4]);
 
@@ -379,14 +428,24 @@ function Home() {
                 <label className="text-sm mb-2 block">Sex</label>
                 <Select onValueChange={(value) => setSex(value)}>
                   <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Sex" />
+                    <SelectValue placeholder="Sex">
+                      {sex ? sexLocalized[sex] : "Sex"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="male">Male</SelectItem>
-                    <SelectItem value="female">Female</SelectItem>
-                    <SelectItem value="intersex">Intersex</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                    <SelectItem value="private">Prefer not to say</SelectItem>
+                    <SelectItem value="male">{sexLocalized["male"]}</SelectItem>
+                    <SelectItem value="female">
+                      {sexLocalized["female"]}
+                    </SelectItem>
+                    <SelectItem value="intersex">
+                      {sexLocalized["intersex"]}
+                    </SelectItem>
+                    <SelectItem value="other">
+                      {sexLocalized["other"]}
+                    </SelectItem>
+                    <SelectItem value="private">
+                      {sexLocalized["private"]}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -394,7 +453,9 @@ function Home() {
                 <label className="text-sm mb-2 block">Age</label>
                 <Select onValueChange={(value) => setAge(value)}>
                   <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Age" />
+                    <SelectValue placeholder="Age">
+                      {age ? age : "Age"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
