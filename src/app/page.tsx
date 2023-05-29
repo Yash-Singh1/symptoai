@@ -86,7 +86,7 @@ function Home() {
         .then((response) => response.json())
         .then((token: string) => {
           return fetch(
-            `https://web-production-a42cd.up.railway.app/query?user_info=${queryKey[1]}`,
+            `https://web-production-a42cd.up.railway.app/query2?user_info=${queryKey[1]}`,
             {
               headers: {
                 "X-SymptoAI-Auth": token,
@@ -99,7 +99,7 @@ function Home() {
         Promise.all(
           Object.keys(json).map((diseaseName) => {
             return fetch(
-              `/api/yelp?find_desc=${json[diseaseName].treatment}&cflt=${json[diseaseName].metadata[1]}&path=search`
+              `/api/yelp?find_desc=${json[diseaseName].metadata[0]}&cflt=${json[diseaseName].metadata[1]}&path=search`
             )
               .then((response) => response.text())
               .then((text) => {
@@ -119,7 +119,7 @@ function Home() {
                       text
                         .match(
                           /(<title(\s*[^=\s]*?=["']?.*?['"]?\s*)*?>)(.*?)- Yelp<\/title>/
-                        )![0]
+                        )![3]
                         .split("-")[0]!
                         .trim()[0],
                     ] as const;

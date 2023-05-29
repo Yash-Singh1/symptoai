@@ -15,7 +15,7 @@ export interface AIResponse {
   [key: string]: {
     probability: string;
     summary: string;
-    treatment: string;
+    treatment: string[];
     /**
      * [localized, unlocalized]
      */
